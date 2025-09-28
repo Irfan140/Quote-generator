@@ -1,4 +1,4 @@
-const url = 'http://192.168.1.69:5000/quote';
+const url = 'https://quote-generator-oczp.onrender.com/quote';
 
 async function getData() {
   try {
