@@ -1,5 +1,4 @@
-from flask import Flask, jsonify
-import requests
+from flask import Flask, jsonify, request
 
 import os
 from dotenv import load_dotenv
@@ -20,8 +19,6 @@ llm = ChatGroq(
     # other params...                       # You can pass extra kwargs depending on API
 )
 
-
-
     
 
 
@@ -32,23 +29,30 @@ app = Flask(__name__)
 def home():
     return jsonify({"message": "Flask Quote API is running"})
 
-@app.route("/quote", methods=["GET"])
+
+
+@app.route("/quote", methods=["POST"])
 def get_quote():
     try:
+        data = request.get_json()  # Get JSON body
+        if not data or "anime" not in data:
+            return jsonify({"error": "Please provide 'anime' in JSON body"}), 400
+
+        anime_name = data["anime"]
+
+        # Prepare the prompt template
         prompt_template = PromptTemplate.from_template(
-    "Give me a quote from the anime {anime}. Just Give the sentence of the quote and the author that said it."
-)
+            "Give me a quote from the anime {anime}. Just give the sentence of the quote and the author that said it."
+        )
 
-
+        # Create LangChain chain
         chain = prompt_template | llm
 
-        anime_name = input("Enter anime name: ")
+        # Invoke the chain with dynamic anime name
+        ai_msg = chain.invoke({"anime": anime_name})
 
-        ai_msg = chain.invoke({"anime": f"{anime_name}"})
+        return jsonify({"quote": ai_msg.content}), 200
 
-        print(ai_msg.content, end="\n\n\n")
-
-        return jsonify(ai_msg.content), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
