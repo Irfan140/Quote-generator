@@ -1,20 +1,23 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, TextInput } from 'react-native';
 import React, { useState } from 'react';
 import getData from '../services/api';
 
 const Home = () => {
   const [loading, setLoading] = useState<boolean>(false);
-  const [quote, setQuote] = useState<{
-    content: string;
-    author: string;
-  } | null>(null);
+  const [quote, setQuote] = useState<{ content: string } | null>(null);
+  const [anime, setAnime] = useState<string>('');
 
   const onPress = async () => {
-    if (!loading) {
+    if (!loading && anime.trim() !== '') {
       setLoading(true);
-      const data = await getData();
-      setQuote({ content: data.content, author: data.author });
-      setLoading(false);
+      try {
+        const data = await getData(anime.trim());
+        setQuote({ content: data.quote });
+      } catch (err) {
+        setQuote({ content: 'Error fetching quote' });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -23,35 +26,50 @@ const Home = () => {
       {/* Header */}
       <View className="items-center mt-6">
         <Text className="text-3xl font-extrabold text-purple-800 text-center">
-          Quote Generator
+          Anime Quote Generator
         </Text>
         <View className="w-24 h-1 bg-purple-500 rounded-full mt-2" />
       </View>
 
+      {/* Anime Input */}
+      <View className="mt-6">
+        <Text className="text-gray-700 mb-2 font-semibold">
+          Enter Anime Name:
+        </Text>
+        <TextInput
+          className="bg-white rounded-xl p-3 border border-gray-300"
+          placeholder="e.g:  Naruto"
+          value={anime}
+          onChangeText={setAnime}
+          // or
+          // onChangeText={(text) => setAnime(text)}
+        />
+      </View>
+
       {/* Quote Card */}
-      <View className="bg-white rounded-2xl p-6 shadow-lg mt-10">
+      <View className="bg-white rounded-2xl p-6 shadow-lg mt-6 flex-1 justify-center">
         {quote ? (
           <>
             <Text className="text-xl text-gray-800 italic">
               "{quote.content}"
             </Text>
             <Text className="text-right text-gray-600 mt-4 font-semibold">
-              — {quote.author}
+              — No author details
             </Text>
           </>
         ) : (
           <Text className="text-center text-gray-500 text-lg">
-            Click Generate to get a random quote from the backend.
+            Enter an anime name above and click Generate to get a quote.
           </Text>
         )}
       </View>
 
       {/* Button */}
-      <View className="items-center mt-10">
+      <View className="items-center mt-6">
         <Pressable
           className={`bg-purple-600 rounded-full px-6 py-3 ${loading ? 'opacity-50' : ''}`}
           onPress={onPress}
-          disabled={loading}
+          disabled={loading || anime.trim() === ''}
         >
           <Text className="text-white font-bold text-lg">
             {loading ? 'Loading...' : 'Generate'}

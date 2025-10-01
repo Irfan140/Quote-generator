@@ -1,16 +1,24 @@
 const url = 'https://quote-generator-oczp.onrender.com/quote';
 
-async function getData() {
+async function getData(animeName: string) {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ anime: animeName }), // send anime name in JSON
+    });
+
     if (!response.ok) {
       throw new Error(`Response status: ${response.status}`);
     }
+
     const result = await response.json();
-    return result; // { content, author }
+    return result; // { quote }
   } catch (error: any) {
     console.error(error.message);
-    return { content: 'Error fetching quote', author: '' };
+    return { quote: 'Error fetching quote' };
   }
 }
 
