@@ -4,7 +4,8 @@ import os
 from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 load_dotenv()
 
@@ -35,26 +36,41 @@ def home():
 def get_quote():
     try:
         data = request.get_json()  # Get JSON body
-        if not data or "anime" not in data:
-            return jsonify({"error": "Please provide 'anime' in JSON body"}), 400
+        if not data or "topic" not in data:
+            return jsonify({"error": "Please provide 'topic' in JSON body"}), 400
 
-        anime_name = data["anime"]
+        topic_name = data["topic"]
 
-        # Prepare the prompt template
-        prompt_template = PromptTemplate.from_template(
-            "Give me a quote from the anime {anime}. Just give the sentence of the quote and the author that said it."
-        )
+        # Define schema
+        response_schemas = [
+            ResponseSchema(name="quote", description="The quote text from the given topic"),
+            ResponseSchema(name="author", description="The name of the author or character of the quote")
+        ]
 
-        # Create LangChain chain
+        # Create output parser
+        output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
+        format_instructions = output_parser.get_format_instructions()
+
+        # Prompt
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", "You are a helpful assistant that gives quotes about any topic. It may be a movie, series, historical leader, manga or manhwa."),
+            ("user", "Tell me a quote from {topic}.\n{format_instructions}")
+        ])
+
+        # Chain
         chain = prompt_template | llm
 
-        # Invoke the chain with dynamic anime name
-        ai_msg = chain.invoke({"anime": anime_name})
+        # Get response from LLM
+        ai_msg = chain.invoke({"topic": topic_name, "format_instructions": format_instructions})
 
-        return jsonify({"quote": ai_msg.content}), 200
+        # Parse model output into dict
+        parsed_output = output_parser.parse(ai_msg.content)
+
+        return jsonify(parsed_output), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
