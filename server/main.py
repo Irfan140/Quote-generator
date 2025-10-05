@@ -53,7 +53,7 @@ def get_quote():
 
         # Prompt
         prompt_template = ChatPromptTemplate.from_messages([
-            ("system", "You are a helpful assistant that gives quotes about any topic. It may be a movie, series, historical leader, manga or manhwa."),
+            ("system", "You are a helpful assistant that gives quotes about any topic. It may be a movie, series, historical leader, manga or manhwa.If you cannot find just tell NOT FOUND"),
             ("user", "Tell me a quote from {topic}.\n{format_instructions}")
         ])
 
